@@ -40,11 +40,17 @@ public class AlbumImageService {
 
             String objectName = albumId + "/" + UUID.randomUUID();
 
+            String contentType = file.getContentType();
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
             minioService.upload(
                     BUCKET,
                     objectName,
                     file.getInputStream(),
-                    file.getContentType());
+                    contentType
+            );
 
             AlbumImage image = new AlbumImage();
             image.setAlbum(album);
@@ -53,11 +59,11 @@ public class AlbumImageService {
 
             imageRepository.save(image);
 
-            String url = minioService.generatePresignedUrl(BUCKET, objectName);
-
             AlbumImageResponse response = new AlbumImageResponse();
             response.setId(image.getId());
-            response.setUrl(url);
+            response.setUrl(
+                    minioService.generatePresignedUrl(BUCKET, objectName)
+            );
 
             return response;
 
@@ -76,7 +82,9 @@ public class AlbumImageService {
                         r.setUrl(
                                 minioService.generatePresignedUrl(
                                         img.getBucket(),
-                                        img.getObjectName()));
+                                        img.getObjectName()
+                                )
+                        );
                         return r;
                     } catch (Exception e) {
                         throw new RuntimeException(e);

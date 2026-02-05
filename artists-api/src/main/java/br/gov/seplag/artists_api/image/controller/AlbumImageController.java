@@ -18,7 +18,7 @@ public class AlbumImageController {
         this.service = service;
     }
 
-    @PostMapping
+    @PostMapping(consumes = "multipart/form-data")
     public AlbumImageResponse upload(
             @PathVariable Long albumId,
             @RequestParam MultipartFile file) {
