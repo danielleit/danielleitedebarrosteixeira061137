@@ -1,5 +1,7 @@
 package br.gov.seplag.artists_api.album.service;
 
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -60,4 +62,10 @@ public class AlbumService extends GenericCrudService<Album> {
     public AlbumResponse toResponse(Album album) {
         return mapper.toResponse(album);
     }
+
+    public Page<AlbumResponse> getAll(Pageable pageable){
+        return albumRepository.findByExcluidoFalse(pageable)
+                .map(mapper::toResponse);
+    }
+
 }

@@ -1,7 +1,5 @@
 package br.gov.seplag.artists_api.album.repository;
 
-import java.util.List;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -12,5 +10,5 @@ public interface AlbumRepository extends BaseRepository<Album> {
 
     Page<Album> findByArtistIdAndExcluidoFalse(Long artistId, Pageable pageable);
 
-    List<Album> findByExcluidoFalse();
+    Page<Album> findByExcluidoFalse(Pageable pageable);
 }
