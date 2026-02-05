@@ -1,5 +1,7 @@
 package br.gov.seplag.artists_api.artist.service;
 
+import org.springframework.stereotype.Service;
+
 import br.gov.seplag.artists_api.artist.domain.Artist;
 import br.gov.seplag.artists_api.artist.dto.ArtistRequest;
 import br.gov.seplag.artists_api.artist.dto.ArtistResponse;
@@ -7,6 +9,7 @@ import br.gov.seplag.artists_api.artist.mapper.ArtistMapper;
 import br.gov.seplag.artists_api.artist.repository.ArtistRepository;
 import br.gov.seplag.artists_api.common.service.GenericCrudService;
 
+@Service
 public class ArtistService extends GenericCrudService<Artist> {
 
     private final ArtistMapper mapper;

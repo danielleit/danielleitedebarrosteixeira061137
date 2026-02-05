@@ -22,18 +22,18 @@ public class ArtistController {
         return service.create(request);
     }
 
-    @GetMapping("/id")
+    @GetMapping("/{id}")
     public ArtistResponse get(@PathVariable Long id) {
         return service.findById(id).map(service::toResponse)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Artista não encontrado"));
     }
 
-    @PutMapping("/id")
+    @PutMapping("/{id}")
     public ArtistResponse update(@PathVariable Long id, @RequestBody ArtistRequest request) {
         return service.update(id, request);
     }
 
-    @DeleteMapping("/id")
+    @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long id) {
         service.delete(id);
