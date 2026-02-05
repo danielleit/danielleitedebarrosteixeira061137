@@ -1,5 +1,7 @@
 package br.gov.seplag.artists_api.artist.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import br.gov.seplag.artists_api.artist.domain.Artist;
@@ -34,5 +36,11 @@ public class ArtistService extends GenericCrudService<Artist> {
         });
 
         return mapper.toResponse(updated);
+    }
+
+    public List<ArtistResponse> getAll() {
+        return super.findAll().stream()
+                .map(mapper::toResponse)
+                .toList();
     }
 }
