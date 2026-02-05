@@ -15,9 +15,6 @@ public class Album extends BaseEntity {
     @Column(nullable = false)
     private String nome;
 
-    @Column(name = "image_path")
-    private String imagePath;
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "artist_id")
     Artist artist;

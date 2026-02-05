@@ -46,13 +46,4 @@ public class AlbumController {
         service.delete(id);
         return ResponseEntity.noContent().build();
     }
-
-    @PostMapping("/{id}/image")
-    public AlbumResponse uploadImage(
-            @PathVariable Long id,
-            @RequestParam MultipartFile file) throws Exception {
-
-        return service.uploadImage(id, file);
-    }
-
 }

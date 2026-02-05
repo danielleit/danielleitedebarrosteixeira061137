@@ -1,11 +1,8 @@
 package br.gov.seplag.artists_api.album.service;
 
-import java.util.UUID;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import br.gov.seplag.artists_api.album.domain.Album;
 import br.gov.seplag.artists_api.album.dto.AlbumRequest;
@@ -21,8 +18,6 @@ import jakarta.persistence.EntityNotFoundException;
 @Service
 public class AlbumService extends GenericCrudService<Album> {
 
-    private final MinioService minioService;
-
     private final AlbumMapper mapper;
     private final ArtistRepository artistRepository;
     private final AlbumRepository albumRepository;
@@ -36,7 +31,6 @@ public class AlbumService extends GenericCrudService<Album> {
         this.albumRepository = albumRepository;
         this.artistRepository = artistRepository;
         this.mapper = mapper;
-        this.minioService = minioService;
     }
 
     public AlbumResponse create(AlbumRequest request) {
@@ -66,31 +60,4 @@ public class AlbumService extends GenericCrudService<Album> {
     public AlbumResponse toResponse(Album album) {
         return mapper.toResponse(album);
     }
-
-    public AlbumResponse uploadImage(Long id, MultipartFile file) throws Exception {
-
-        Album album = findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Album não encontrado"));
-
-        String objectName = UUID.randomUUID() + "-" + file.getOriginalFilename();
-
-        minioService.upload(
-                "albums",
-                objectName,
-                file.getInputStream(),
-                file.getContentType());
-
-        album.setImagePath(objectName);
-        save(album);
-
-        AlbumResponse response = mapper.toResponse(album);
-
-        if (album.getImagePath() != null) {
-            response.setImageUrl(
-                    minioService.generatePresignedUrl("albums", album.getImagePath()));
-        }
-
-        return response;
-    }
-
 }

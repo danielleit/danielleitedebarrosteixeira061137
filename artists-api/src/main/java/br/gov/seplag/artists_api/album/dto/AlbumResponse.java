@@ -10,5 +10,4 @@ public class AlbumResponse {
     private String nome;
     private Long artistId;
     private String artistNome;
-    private String imageUrl;
 }
