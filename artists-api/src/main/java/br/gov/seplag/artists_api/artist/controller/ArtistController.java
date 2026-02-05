@@ -1,5 +1,7 @@
 package br.gov.seplag.artists_api.artist.controller;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +13,7 @@ import br.gov.seplag.artists_api.artist.service.ArtistService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/artists")
+@RequestMapping("/api/v1/artists")
 public class ArtistController {
 
     @Autowired
@@ -38,4 +40,10 @@ public class ArtistController {
     public void delete(@PathVariable Long id) {
         service.delete(id);
     }
+
+    @GetMapping
+    public List<ArtistResponse> getAll() {
+        return service.getAll();
+    }
+
 }

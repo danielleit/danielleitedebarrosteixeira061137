@@ -1,7 +1,9 @@
 package br.gov.seplag.artists_api.common.service;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -37,5 +39,11 @@ public class GenericCrudService<T extends BaseEntity> {
 
         entity.setExcluido(true);
         repository.save(entity);
+    }
+
+    public List<T> findAll() {
+        return repository.findAll().stream()
+                .filter(e -> !Boolean.TRUE.equals(e.getExcluido()))
+                .collect(Collectors.toList());
     }
 }
