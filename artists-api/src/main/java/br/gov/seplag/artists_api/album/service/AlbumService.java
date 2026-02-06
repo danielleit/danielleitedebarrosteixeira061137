@@ -62,7 +62,7 @@ public class AlbumService extends GenericCrudService<Album> {
     }
 
     public AlbumResponse update(Long id, AlbumRequest request) {
-        Album album = update(id, entity -> {
+        Album album = super.update(id, entity -> {
             entity.setNome(request.getNome());
         });
 
