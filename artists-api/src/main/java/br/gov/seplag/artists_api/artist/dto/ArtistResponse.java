@@ -6,6 +6,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class ArtistResponse {
-    public Long id;
-    public String nome;
+    private Long id;
+    private String nome;
+    private Long albumCount; // Número de álbuns
 }

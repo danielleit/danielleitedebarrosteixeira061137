@@ -3,6 +3,10 @@ package br.gov.seplag.artists_api.artist.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -41,9 +45,23 @@ public class ArtistController {
         service.delete(id);
     }
 
-    @GetMapping
-    public List<ArtistResponse> getAll() {
+    @GetMapping("/all")
+    public List<ArtistResponse> getAllList() {
         return service.getAll();
     }
 
+    /**
+     * Busca paginada com ordenação e filtro por nome.
+     * 
+     * Exemplos:
+     * - GET /api/v1/artists?page=0&size=10&sort=nome,asc
+     * - GET /api/v1/artists?nome=Guns&sort=nome,desc
+     */
+    @GetMapping
+    public Page<ArtistResponse> search(
+            @RequestParam(required = false) String nome,
+            @PageableDefault(size = 10, sort = "nome", direction = Sort.Direction.ASC) Pageable pageable
+    ) {
+        return service.search(nome, pageable);
+    }
 }
