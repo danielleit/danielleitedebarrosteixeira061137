@@ -160,42 +160,90 @@ Essa decisão foi adotada para manter simplicidade, previsibilidade e alinhament
 
 Os endpoints seguem versionamento por URL:
 
-* POST `/api/v1/auth/login`
-* POST `/api/v1/auth/refresh`
-* GET `/api/v1/artistas`
-* POST `/api/v1/artistas`
-* PUT `/api/v1/artistas/{id}`
-* GET `/api/v1/artistas/{id}/albuns`
-* POST `/api/v1/albuns`
-* POST `/api/v1/albuns/{id}/capas`
+### Autenticação
+* `POST /api/v1/auth/login` - Autenticação de usuário
+* `POST /api/v1/auth/refresh` - Renovação de token JWT
+
+### Artistas
+* `GET /api/v1/artists` - Listar artistas (paginado, busca por nome, ordenação)
+* `GET /api/v1/artists/{id}` - Obter artista por ID
+* `POST /api/v1/artists` - Criar artista
+* `PUT /api/v1/artists/{id}` - Atualizar artista
+* `DELETE /api/v1/artists/{id}` - Excluir artista
+
+### Álbuns
+* `GET /api/v1/albuns` - Listar todos os álbuns (paginado)
+* `GET /api/v1/albuns/artista/{artistId}` - Listar álbuns de um artista (paginado)
+* `POST /api/v1/albuns` - Criar álbum
+* `PUT /api/v1/albuns/{id}` - Atualizar álbum
+* `DELETE /api/v1/albuns/{id}` - Excluir álbum
+
+### Capas de Álbuns
+* `POST /api/v1/albuns/{id}/capas` - Upload de capa
+* `GET /api/v1/albuns/{id}/capas` - Listar capas do álbum
+
+### Regionais (Requisito Sênior)
+* `GET /api/v1/regionais` - Listar regionais (paginado)
+* `GET /api/v1/regionais/ativas` - Listar apenas regionais ativas
+* `GET /api/v1/regionais/{id}` - Obter regional por ID
+* `POST /api/v1/regionais/sync` - Sincronização manual
+
+### Health Checks
+* `GET /actuator/health` - Status geral da aplicação
+* `GET /actuator/health/liveness` - Liveness probe
+* `GET /actuator/health/readiness` - Readiness probe
 
 ### Documentação
-
-A documentação da API é disponibilizada via Swagger:
-
+A documentação completa da API via Swagger/OpenAPI está disponível em:
 ```
 http://localhost:8080/swagger-ui.html
 ```
 
 ---
 
-## Notificações em Tempo Real
+## WebSocket - Notificações em Tempo Real
 
-Sempre que um novo álbum é cadastrado, a API publica um evento via **WebSocket**.
+Endpoint WebSocket: `ws://localhost:8080/ws`
+
+Sempre que um novo álbum é cadastrado, a API publica um evento via WebSocket no tópico `/topic/albums`.
 
 O front-end consome esses eventos e exibe notificações em tempo real ao usuário.
 
+**Estrutura da notificação:**
+```json
+{
+  "type": "NEW_ALBUM",
+  "albumId": 1,
+  "albumName": "Nome do Álbum",
+  "artistId": 1,
+  "artistName": "Nome do Artista",
+  "message": "Novo álbum cadastrado: Nome do Álbum - Nome do Artista"
+}
+```
+
 ---
 
-## Sincronização de Regionais
+## Sincronização de Regionais (Requisito Sênior)
 
-Será implementada a sincronização com o endpoint externo de regionais da Polícia Civil:
+O sistema implementa sincronização automática com o endpoint externo:
+```
+https://integrador-argus-api.geia.vip/v1/regionais
+```
 
-* Inserção de novos registros
-* Inativação de registros inexistentes no endpoint
-* Em caso de alteração, o registro anterior é inativado e um novo é criado
+### Estratégia de Sincronização (Complexidade O(n))
 
-A estratégia utiliza estrutura de mapa por identificador, garantindo **complexidade O(n)**.
+1. **Buscar dados da API externa**
+2. **Buscar dados locais**
+3. **Criar mapa (HashMap) para acesso O(1) por ID**
+4. **Para cada regional da API externa:**
+   - Se não existe localmente → **inserir**
+   - Se existe mas nome mudou → **inativar registro antigo e criar novo**
+5. **Para regionais locais ativas não presentes na API → inativar**
+
+### Execução
+
+- **Automática:** A cada 1 hora
+- **Manual:** via endpoint `POST /api/v1/regionais/sync`
 
 ---
 
@@ -206,54 +254,270 @@ A estratégia utiliza estrutura de mapa por identificador, garantindo **complexi
 * Docker
 * Docker Compose
 
-### Execução
+### Execução Completa (Recomendado)
 
 ```bash
+# Subir todos os serviços
 docker-compose up -d
+
+# Aguardar inicialização (cerca de 30 segundos)
+# Acessar:
+# - API: http://localhost:8080
+# - Frontend: http://localhost:3000
+# - Swagger: http://localhost:8080/swagger-ui.html
+# - MinIO Console: http://localhost:9001
 ```
 
-Após a inicialização, os serviços estarão disponíveis conforme definido no `docker-compose.yml`.
+### Execução Individual (Desenvolvimento)
 
-### Observações Importantes
+#### Backend
+```bash
+cd artists-api
+./gradlew bootRun
+```
 
-Antes de utilizar os endpoints de upload de imagens, é necessário garantir que o bucket
-`album-capas` esteja criado no MinIO.
+#### Frontend
+```bash
+cd artists-web
+npm install
+npm run dev
+```
 
-O console do MinIO estará disponível conforme definido no `docker-compose.yml`.
+### Credenciais Padrão
 
----
+**Usuários da aplicação:**
+- Username: `admin` | Senha: `admin123`
+- Username: `user` | Senha: `admin123`
 
-## Implementação Atual
+**MinIO:**
+- Access Key: `minioadmin`
+- Secret Key: `minioadmin`
 
-### Concluído
-
-* Estrutura inicial do projeto Spring Boot
-* Configuração do Gradle
-* Organização modular do backend
-* CRUD de Artistas, Álbuns e Imagens
-* Integração com MinIO
-* Versionamento de endpoints
-* Documentação inicial (README)
-
-### Em Andamento
-
-* Autenticação JWT
-* Rate limit
-* WebSocket
-* Front-end
-
-### Planejado
-
-* Testes unitários e de integração
-* Sincronização de regionais
-* Ajustes finais de segurança
-* Documentação complementar
+**PostgreSQL:**
+- Database: `artists_db`
+- Username: `artists`
+- Password: `artists`
 
 ---
 
-## Observações Finais
+## Desenvolvimento com IDEs (VS Code, IntelliJ, etc.)
 
-Nem todos os requisitos foram implementados integralmente até o momento.
-As decisões de priorização foram documentadas, e os pontos pendentes estão claramente descritos neste README.
+Para obter **autocompletar**, **verificação de tipos** e **IntelliSense** no frontend:
 
-O foco do projeto é demonstrar **capacidade técnica**, **organização**, **clareza arquitetural**, **boas práticas** e **maturidade profissional**.
+```bash
+cd artists-web
+npm install
+```
+
+**Por quê?**
+- O container Docker tem seu próprio `node_modules` (isolado)
+- A IDE precisa das dependências **localmente** para analisar o código TypeScript
+- O `start.sh` já faz isso automaticamente
+
+**Importante:** As dependências locais são **apenas para a IDE**. A aplicação roda dentro do container usando suas próprias dependências.
+
+---
+
+## Testes
+
+### Backend
+
+```bash
+cd artists-api
+./gradlew test
+```
+
+Os testes incluem:
+- Testes unitários de serviços (ArtistService, JwtService, UserDetailsService)
+- Testes de integração (em desenvolvimento)
+
+### Frontend
+
+```bash
+cd artists-web
+npm test
+```
+
+---
+
+## Estrutura do Banco de Dados
+
+### Tabela: artist
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| id | BIGSERIAL | Chave primária |
+| nome | VARCHAR(255) | Nome do artista |
+| ativo | BOOLEAN | Status ativo/inativo |
+| created_at | TIMESTAMP | Data de criação |
+| updated_at | TIMESTAMP | Data de atualização |
+
+### Tabela: album
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| id | BIGSERIAL | Chave primária |
+| nome | VARCHAR(255) | Nome do álbum |
+| artist_id | BIGINT | FK para artist |
+| data_lancamento | DATE | Data de lançamento |
+| ativo | BOOLEAN | Status ativo/inativo |
+| created_at | TIMESTAMP | Data de criação |
+| updated_at | TIMESTAMP | Data de atualização |
+
+### Tabela: album_image
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| id | BIGSERIAL | Chave primária |
+| album_id | BIGINT | FK para album |
+| bucket | VARCHAR(255) | Nome do bucket MinIO |
+| object_name | VARCHAR(500) | Nome do objeto no MinIO |
+| created_at | TIMESTAMP | Data de criação |
+
+### Tabela: app_user
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| id | BIGSERIAL | Chave primária |
+| username | VARCHAR(100) | Nome de usuário (unique) |
+| password | VARCHAR(255) | Senha criptografada (BCrypt) |
+| email | VARCHAR(255) | E-mail |
+| ativo | BOOLEAN | Status ativo/inativo |
+| created_at | TIMESTAMP | Data de criação |
+| updated_at | TIMESTAMP | Data de atualização |
+
+### Tabela: regional
+| Campo | Tipo | Descrição |
+|-------|------|-----------|
+| id | INTEGER | Chave primária |
+| nome | VARCHAR(200) | Nome da regional |
+| ativo | BOOLEAN | Status ativo/inativo |
+| created_at | TIMESTAMP | Data de criação |
+| updated_at | TIMESTAMP | Data de atualização |
+
+---
+
+## Checklist de Requisitos Implementados
+
+### Back End ✅
+
+- [x] **Segurança CORS** - Configurado para aceitar apenas domínios autorizados
+- [x] **Autenticação JWT** - Token com expiração de 5 minutos
+- [x] **Renovação de Token** - Endpoint `/api/v1/auth/refresh`
+- [x] **POST, PUT, GET** - Implementados para todos os recursos
+- [x] **Paginação** - Consulta de álbuns e artistas
+- [x] **Consultas parametrizadas** - Álbuns por artista
+- [x] **Ordenação alfabética** - Busca de artistas (asc/desc)
+- [x] **Upload de imagens** - Múltiplas capas por álbum
+- [x] **MinIO (S3)** - Armazenamento de imagens
+- [x] **Presigned URLs** - Expiração de 30 minutos
+- [x] **Versionamento de endpoints** - `/api/v1/`
+- [x] **Flyway Migrations** - Criação e população do banco
+- [x] **Swagger/OpenAPI** - Documentação completa
+
+### Requisitos Sênior ✅
+
+- [x] **Health Checks** - Liveness e Readiness
+- [x] **Testes Unitários** - ArtistService, JwtService, UserDetailsService
+- [x] **WebSocket** - Notificações de novos álbuns
+- [x] **Rate Limit** - 10 requisições/minuto por usuário
+- [x] **Facade Pattern** - Implementado no frontend (BehaviorSubject)
+- [x] **Sincronização de Regionais** - Algoritmo O(n), sincronização automática
+
+### Front End ⚠️ (Parcialmente Implementado)
+
+- [x] **Estrutura modular** - Domínios, facades, componentes
+- [x] **TypeScript** - Todo o projeto
+- [x] **Tailwind CSS** - Estilização
+- [x] **Facade Pattern** - Com BehaviorSubject (RxJS)
+- [x] **Autenticação JWT** - AuthService e interceptor
+- [x] **WebSocket** - Hook useWebSocket
+- [x] **Docker** - Dockerfile e docker-compose
+- [ ] **Lazy Loading Routes** - Em desenvolvimento
+- [ ] **Telas completas** - Login, listagem, cadastro (em desenvolvimento)
+
+---
+
+## Decisões Técnicas e Arquiteturais
+
+### Por que MapStruct?
+- Redução de boilerplate
+- Type-safe
+- Geração de código em tempo de compilação
+- Performance superior a reflexão
+
+### Por que Flyway?
+- Versionamento declarativo do schema
+- Rastreabilidade de mudanças
+- Reprodutibilidade em ambientes
+- Integração nativa com Spring Boot
+
+### Por que BehaviorSubject no React?
+- Atendimento explícito ao requisito do edital
+- Estado reativo e compartilhado
+- Desacoplamento entre UI e lógica de negócio
+- Cache do último valor emitido
+
+### Por que Generic CRUD Service?
+- Reutilização de código
+- Padrão consistente
+- Facilita manutenção
+- Extensível para casos específicos
+
+---
+
+## Observações e Limitações
+
+### O que foi priorizado
+
+1. **Requisitos sênior** - Para demonstrar capacidade técnica avançada
+2. **Arquitetura sólida** - Base escalável e manutenível
+3. **Segurança** - JWT, CORS, Rate Limit
+4. **Documentação** - Código limpo e README detalhado
+5. **Infraestrutura** - Docker, migrations, health checks
+
+### O que ficou pendente
+
+- **Frontend completo** - Telas funcionais básicas implementadas, mas necessitam refinamento
+- **Testes de integração** - Apenas testes unitários implementados
+- **Validações avançadas** - Foco em validações básicas
+- **Tratamento de erros granular** - Exception handlers básicos
+
+### Justificativa
+
+Dado o prazo do processo seletivo, priorizei demonstrar:
+- **Conhecimento técnico amplo** - Diversos requisitos complexos
+- **Qualidade sobre quantidade** - Código limpo e bem estruturado
+- **Pensamento arquitetural** - Decisões conscientes e documentadas
+- **Capacidade de priorização** - Foco no que agrega mais valor
+
+---
+
+## Commits e Versionamento
+
+O histórico de commits foi organizado de forma descritiva e incremental, demonstrando:
+- Evolução natural do projeto
+- Separação lógica de funcionalidades
+- Mensagens claras e objetivas
+- Commits pequenos e focados
+
+---
+
+## Próximos Passos (Se houvesse mais tempo)
+
+1. Completar todas as telas do frontend
+2. Implementar testes E2E com Cypress/Playwright
+3. Adicionar cache com Redis
+4. Implementar circuit breaker para chamadas externas
+5. Adicionar observabilidade (prometheus, grafana)
+6. Implementar CI/CD pipeline
+7. Documentação de API com exemplos interativos
+
+---
+
+## Contato
+
+**Candidato:** Daniel Leite de Barros Teixeira  
+**Vaga:** Analista de TI – Perfil Sênior  
+**Processo:** SEPLAG 001/2026  
+
+---
+
+**Data de entrega:** Fevereiro/2026  
+**Status:** ✅ Implementação concluída com requisitos priorizados
