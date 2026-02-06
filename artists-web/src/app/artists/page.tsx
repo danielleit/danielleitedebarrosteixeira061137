@@ -5,23 +5,52 @@ import { artistFacade } from "@/domain/artists/artist.facade";
 import { useObservable } from "@/state/hooks/useObservable";
 import { ArtistTable } from "@/components/ArtistTable";
 import { Navbar } from "@/components/Navbar";
+import { authFacade } from "@/state/auth/auth.facade";
 
 export default function ArtistsPage() {
   const router = useRouter();
   const state = useObservable(artistFacade.state, artistFacade.snapshot);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
-    artistFacade.loadArtists();
-  }, []);
+    const snapshot = authFacade.snapshot;
+    if (!snapshot.isAuthenticated) {
+      router.replace("/login");
+      return;
+    }
+    setIsCheckingAuth(false);
+  }, [router]);
+
+  useEffect(() => {
+    if (!isCheckingAuth) {
+      artistFacade.loadArtists();
+    }
+  }, [isCheckingAuth]);
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-[#FFBB38]"></div>
+          <p className="text-gray-600">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
 
   const artists = state.artists?.content || [];
   const filteredArtists = searchTerm
     ? artists.filter((a) => a.nome.toLowerCase().includes(searchTerm.toLowerCase()))
     : artists;
 
-  return (
-    <div className="min-h-screen bg-[#F9FAFB]">
+  const page = state.artists;
+
+  function handlePageChange(newPage: number) {
+    artistFacade.loadArtists({ page: newPage });
+  }
+
+  return (<div className="min-h-screen bg-[#F9FAFB]">
       <Navbar />
       
       <div className="max-w-7xl mx-auto px-6 py-10">
@@ -79,28 +108,104 @@ export default function ArtistsPage() {
             </div>
           </div>
         ) : (
-          <ArtistTable artists={filteredArtists} />
-        )}
+          <>
+            <ArtistTable artists={filteredArtists} />
 
-        {/* Estatísticas */}
-        {!state.loading && !state.error && (
-          <div className="mt-8 bg-white rounded-lg border-2 border-gray-200 p-6">
-            <div className="flex items-center justify-between">
-              <p className="text-gray-600">
-                Mostrando <span className="font-bold text-[#1D1D1D] text-lg">{filteredArtists.length}</span> de{" "}
-                <span className="font-bold text-[#1D1D1D] text-lg">{artists.length}</span> artistas
-              </p>
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <svg className="w-5 h-5 text-[#FFBB38]" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                  <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
-                </svg>
-                Total de registros
+            {/* Paginação */}
+            {page && page.totalPages > 1 && !searchTerm && (
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-lg border-2 border-gray-200 p-6">
+                <div className="text-sm text-gray-600">
+                  Mostrando página <span className="font-bold text-[#1D1D1D]">{page.number + 1}</span> de{" "}
+                  <span className="font-bold text-[#1D1D1D]">{page.totalPages}</span>
+                  {" "}({page.totalElements} artistas no total)
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handlePageChange(page.number - 1)}
+                    disabled={page.number === 0}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-[#1D1D1D] text-[#1D1D1D] rounded-lg hover:bg-[#1D1D1D] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#1D1D1D] transition-all font-semibold"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Anterior
+                  </button>
+
+                  {/* Números de página */}
+                  <div className="hidden sm:flex items-center gap-1">
+                    {Array.from({ length: Math.min(5, page.totalPages) }, (_, i) => {
+                      let pageNum;
+                      if (page.totalPages <= 5) {
+                        pageNum = i;
+                      } else if (page.number < 3) {
+                        pageNum = i;
+                      } else if (page.number > page.totalPages - 4) {
+                        pageNum = page.totalPages - 5 + i;
+                      } else {
+                        pageNum = page.number - 2 + i;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => handlePageChange(pageNum)}
+                          className={`w-10 h-10 rounded-lg font-bold transition-all ${
+                            pageNum === page.number
+                              ? "bg-[#FFBB38] text-[#1D1D1D] shadow-md"
+                              : "text-gray-600 hover:bg-gray-100"
+                          }`}
+                        >
+                          {pageNum + 1}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    onClick={() => handlePageChange(page.number + 1)}
+                    disabled={page.number + 1 >= page.totalPages}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-[#1D1D1D] text-[#1D1D1D] rounded-lg hover:bg-[#1D1D1D] hover:text-white disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-[#1D1D1D] transition-all font-semibold"
+                  >
+                    Próxima
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
+            )}
+
+            {/* Estatísticas */}
+            {!searchTerm && (
+              <div className="mt-4 bg-white rounded-lg border-2 border-gray-200 p-6">
+                <div className="flex items-center justify-between">
+                  <p className="text-gray-600">
+                    Mostrando <span className="font-bold text-[#1D1D1D] text-lg">{artists.length}</span> artistas nesta página
+                  </p>
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <svg className="w-5 h-5 text-[#FFBB38]" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                      <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
+                    </svg>
+                    Total de registros
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Resultados da busca */}
+            {searchTerm && (
+              <div className="mt-8 bg-white rounded-lg border-2 border-gray-200 p-6">
+                <p className="text-gray-600">
+                  Encontrados <span className="font-bold text-[#1D1D1D] text-lg">{filteredArtists.length}</span> resultado(s) para "{searchTerm}"
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
   );
 }
+
