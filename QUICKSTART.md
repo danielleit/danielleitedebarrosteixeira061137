@@ -2,22 +2,34 @@
 
 Este projeto implementa um sistema completo de gerenciamento de artistas e álbuns para o Processo Seletivo SEPLAG 2026.
 
-## ⚡ Executar Projeto (Modo Completo)
+## ⚡ Executar Projeto
 
-### Opção 1: Script Automático (Linux/Mac)
+### Opção 1: Script Automático (Recomendado)
 
+**Windows (PowerShell):**
+```powershell
+.\start.ps1
+```
+
+**Linux/Mac:**
 ```bash
 chmod +x start.sh
 ./start.sh
 ```
 
+> ✅ **Os scripts instalam automaticamente as dependências locais para seu editor (VS Code, IntelliJ, etc.) funcionar corretamente!**
+
 ### Opção 2: Docker Compose Manual
 
 ```bash
+# Se usar este método, instale as dependências primeiro:
+cd artists-web && npm install && cd ..
+
+# Depois suba os containers:
 docker-compose up -d --build
 ```
 
-Aguarde aproximadamente 30 segundos para inicialização completa.
+⏳ Aguarde aproximadamente **30-60 segundos** para inicialização completa.
 
 ## 📍 Acessar Serviços
 

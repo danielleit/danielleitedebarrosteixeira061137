@@ -1,27 +1,53 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useObservable } from "@/state/hooks/useObservable";
 import { artistDetailFacade } from "@/domain/artists/artist.detail.facade";
 import { Navbar } from "@/components/Navbar";
+import { AlbumForm } from "@/components/AlbumForm";
+import { authFacade } from "@/state/auth/auth.facade";
 
 export default function ArtistDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const st = useObservable(artistDetailFacade.state$, artistDetailFacade.snapshot);
+  const [showAddAlbum, setShowAddAlbum] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   useEffect(() => {
-    artistDetailFacade.reset();
-    artistDetailFacade.load(id);
-  }, [id]);
+    const snapshot = authFacade.snapshot;
+    if (!snapshot.isAuthenticated) {
+      router.replace("/login");
+      return;
+    }
+    setIsCheckingAuth(false);
+  }, [router]);
+
+  useEffect(() => {
+    if (!isCheckingAuth) {
+      artistDetailFacade.reset();
+      artistDetailFacade.load(id);
+    }
+  }, [id, isCheckingAuth]);
 
   useEffect(() => {
     if (st.artistId) artistDetailFacade.loadAlbums();
   }, [st.albumsPage]);
 
   const page = st.albums?.meta;
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-[#FFBB38]"></div>
+          <p className="text-gray-600">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F9FAFB]">
@@ -93,12 +119,51 @@ export default function ArtistDetailPage() {
           <div>
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-bold text-[#1D1D1D]">Álbuns</h2>
-              {st.albums && st.albums.content.length > 0 && (
-                <span className="px-5 py-2 bg-[#FFBB38] text-[#1D1D1D] rounded-lg text-base font-bold">
-                  {st.albums.meta.totalElements} {st.albums.meta.totalElements === 1 ? "álbum" : "álbuns"}
-                </span>
-              )}
+              <div className="flex items-center gap-4">
+                {st.albums && st.albums.content.length > 0 && (
+                  <span className="px-5 py-2 bg-[#FFBB38] text-[#1D1D1D] rounded-lg text-base font-bold">
+                    {st.albums.meta.totalElements} {st.albums.meta.totalElements === 1 ? "álbum" : "álbuns"}
+                  </span>
+                )}
+                <button
+                  onClick={() => setShowAddAlbum(!showAddAlbum)}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-[#1D1D1D] text-white rounded-lg hover:bg-[#333] transition-all font-bold shadow-md hover:shadow-lg"
+                >
+                  {showAddAlbum ? (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Cancelar
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Adicionar Álbum
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
+
+            {/* Formulário de Adicionar Álbum */}
+            {showAddAlbum && (
+              <div className="mb-8">
+                <AlbumForm
+                  artistId={id}
+                  onSubmit={async (data) => {
+                    const albumId = await artistDetailFacade.createAlbum(data);
+                    if (albumId) {
+                      setShowAddAlbum(false);
+                    }
+                    return albumId;
+                  }}
+                  onCancel={() => setShowAddAlbum(false)}
+                />
+              </div>
+            )}
 
             {st.albumsLoading && (
               <div className="flex justify-center items-center py-16">

@@ -114,6 +114,28 @@ class ArtistDetailFacade {
 
     this.s.next({ ...this.snapshot, covers: next });
   }
+
+  async createAlbum(data: { nome: string }): Promise<string | null> {
+    const st = this.snapshot;
+    if (!st.artistId) return null;
+
+    try {
+      const albumId = await albumApi.create(st.artistId, data);
+      await this.loadAlbums();
+      return albumId;
+    } catch (e: any) {
+      throw new Error(e?.message ?? "Erro ao criar álbum");
+    }
+  }
+
+  async deleteAlbum(albumId: string) {
+    try {
+      await albumApi.delete(albumId);
+      await this.loadAlbums();
+    } catch (e: any) {
+      throw new Error(e?.message ?? "Erro ao excluir álbum");
+    }
+  }
 }
 
 export const artistDetailFacade = new ArtistDetailFacade();

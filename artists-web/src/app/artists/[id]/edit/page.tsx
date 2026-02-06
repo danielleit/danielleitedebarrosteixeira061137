@@ -1,29 +1,53 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useObservable } from "@/state/hooks/useObservable";
 import { artistEditFacade } from "@/domain/artists/artist.edit.facade";
 import { artistFacade } from "@/domain/artists/artist.facade";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
+import { authFacade } from "@/state/auth/auth.facade";
 
 export default function EditArtistPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params.id;
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
   const st = useObservable(artistEditFacade.state$, artistEditFacade.snapshot);
 
   useEffect(() => {
-    artistEditFacade.reset();
-    artistEditFacade.load(id);
-  }, [id]);
+    const snapshot = authFacade.snapshot;
+    if (!snapshot.isAuthenticated) {
+      router.replace("/login");
+      return;
+    }
+    setIsCheckingAuth(false);
+  }, [router]);
+
+  useEffect(() => {
+    if (!isCheckingAuth) {
+      artistEditFacade.reset();
+      artistEditFacade.load(id);
+    }
+  }, [id, isCheckingAuth]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     await artistEditFacade.save();
     router.push(`/artists/${id}`);
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F9FAFB]">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-[#FFBB38]"></div>
+          <p className="text-gray-600">Verificando autenticação...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -109,6 +109,36 @@ class ArtistDetailFacade {
 
     this.s.next({ ...this.snapshot, covers: next });
   }
+
+  async createAlbum(data: { nome: string }): Promise<string | null> {
+    const st = this.snapshot;
+    if (!st.artistId) return null;
+
+    try {
+      const albumId = await albumApi.create(st.artistId, data);
+      
+      // Recarregar a lista de álbuns após criar
+      await this.loadAlbums();
+      
+      return albumId;
+    } catch (e: any) {
+      throw new Error(e?.message ?? "Erro ao criar álbum");
+    }
+  }
+
+  async deleteAlbum(albumId: string): Promise<boolean> {
+    try {
+      await albumApi.delete(albumId);
+      
+      // Recarregar a lista
+      await this.loadAlbums();
+      
+      return true;
+    } catch (e: any) {
+      console.error("Erro ao excluir álbum:", e);
+      return false;
+    }
+  }
 }
 
 export const artistDetailFacade = new ArtistDetailFacade();

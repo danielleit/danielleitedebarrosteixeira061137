@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { authFacade } from "@/state/auth/auth.facade";
 
 export default function LoginPage() {
@@ -46,14 +45,22 @@ export default function LoginPage() {
             {/* topo */}
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-                <Image
-                  src="/next.svg"
-                  alt="Logo"
-                  width={22}
-                  height={22}
-                  className="dark:invert"
-                  priority
-                />
+                {/* Ícone de Música */}
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="text-zinc-900 dark:text-zinc-50"
+                >
+                  <path
+                    d="M9 18V5l12-2v13M9 18c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3zm12-3c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
               </div>
               <div>
                 <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
@@ -160,8 +167,27 @@ export default function LoginPage() {
                 {loading ? "Entrando..." : "Entrar"}
               </button>
 
-              <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
-                Dica: depois do login você será redirecionado para{" "}
+              {/* Credenciais padrão */}
+              <div className="mt-4 rounded-lg border border-blue-200 bg-blue-50 p-3 dark:border-blue-900/50 dark:bg-blue-950/40">
+                <div className="flex items-start gap-2">
+                  <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600 dark:text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-blue-900 dark:text-blue-100">
+                      Credenciais padrão:
+                    </p>
+                    <p className="mt-1 text-xs text-blue-800 dark:text-blue-200">
+                      Usuário: <span className="font-mono font-bold">admin</span>
+                      <br />
+                      Senha: <span className="font-mono font-bold">admin123</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-center text-xs text-zinc-500 dark:text-zinc-400 mt-3">
+                Após o login você será redirecionado para{" "}
                 <span className="font-medium text-zinc-700 dark:text-zinc-200">
                   /artists
                 </span>

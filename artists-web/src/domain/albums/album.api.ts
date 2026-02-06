@@ -45,4 +45,19 @@ export const albumApi = {
       },
     } satisfies AlbumPage;
   },
+
+  create: async (artistId: string, data: { nome: string }): Promise<string> => {
+    const response = await httpClient.post<AlbumApiDTO>(
+      `${config.apiUrl}/api/v1/albuns`,
+      {
+        nome: data.nome,
+        artistId: Number(artistId),
+      }
+    );
+    return String(response.id);
+  },
+
+  delete: async (albumId: string): Promise<void> => {
+    await httpClient.delete(`${config.apiUrl}/api/v1/albuns/${albumId}`);
+  },
 };

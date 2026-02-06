@@ -14,6 +14,30 @@
 
 ---
 
+## 🚀 Início Rápido
+
+**Quer apenas executar o projeto?** Use os scripts automatizados:
+
+### Windows:
+```powershell
+.\start.ps1
+```
+
+### Linux/Mac:
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+Após 30-60 segundos, acesse:
+- **Frontend:** http://localhost:3000 (Login: `admin` / `admin123`)
+- **API:** http://localhost:8080
+- **Swagger:** http://localhost:8080/swagger-ui.html
+
+📖 **Para mais detalhes**, veja a [seção completa de Como Executar](#como-executar) ou o [QUICKSTART.md](QUICKSTART.md).
+
+---
+
 ## Visão Geral
 
 Este projeto tem como objetivo implementar uma solução **full stack** para o gerenciamento de artistas e seus álbuns, atendendo aos requisitos técnicos definidos no edital do processo seletivo.
@@ -251,16 +275,51 @@ https://integrador-argus-api.geia.vip/v1/regionais
 
 ### Pré-requisitos
 
-* Docker
-* Docker Compose
+* Docker Desktop instalado e rodando
+* Docker Compose (incluído no Docker Desktop)
+* *Opcional:* Node.js 18+ (apenas se quiser rodar localmente sem Docker)
 
-### Execução Completa (Recomendado)
+---
+
+### 🚀 Opção 1: Script Automatizado (Recomendado)
+
+Este método **instala automaticamente** as dependências locais para o VS Code/IDEs funcionarem corretamente.
+
+#### Windows (PowerShell):
+```powershell
+.\start.ps1
+```
+
+#### Linux/Mac:
+```bash
+chmod +x start.sh
+./start.sh
+```
+
+O script irá:
+- ✅ Verificar se Docker está instalado
+- ✅ Instalar dependências do frontend localmente (para IntelliSense/TypeScript)
+- ✅ Construir e iniciar todos os containers
+- ✅ Mostrar URLs de acesso e credenciais
+
+**Aguarde cerca de 30-60 segundos** para todos os serviços iniciarem completamente.
+
+---
+
+### 🔧 Opção 2: Execução Manual
+
+Se preferir executar manualmente sem usar os scripts:
 
 ```bash
-# Subir todos os serviços
-docker-compose up -d
+# 1. Instalar dependências locais (IMPORTANTE para IDEs)
+cd artists-web
+npm install
+cd ..
 
-# Aguardar inicialização (cerca de 30 segundos)
+# 2. Subir todos os serviços
+docker-compose up -d --build
+
+# 3. Aguardar inicialização (cerca de 30 segundos)
 # Acessar:
 # - API: http://localhost:8080
 # - Frontend: http://localhost:3000
@@ -268,53 +327,96 @@ docker-compose up -d
 # - MinIO Console: http://localhost:9001
 ```
 
-### Execução Individual (Desenvolvimento)
+> **⚠️ Importante:** O `npm install` é necessário **apenas para desenvolvimento local** (VS Code, IntelliSense, validação TypeScript). A aplicação roda normalmente no Docker sem isso, mas o editor não conseguirá validar o código.
 
-#### Backend
+---
+
+### 🛑 Como Parar
+
+```bash
+# Parar containers
+docker-compose down
+
+# Parar e limpar volumes (apaga dados do banco)
+docker-compose down -v
+```
+
+---
+
+## Credenciais Padrão
+
+### 🔐 Acesso à Aplicação Web
+
+Ao acessar `http://localhost:3000`, use uma das seguintes credenciais:
+
+| Usuário | Senha | Descrição |
+|---------|-------|-----------|
+| **admin** | **admin123** | Usuário administrador (recomendado) |
+| user | admin123 | Usuário comum |
+
+> **⚠️ Importante:** Essas credenciais são apenas para **ambiente de desenvolvimento**. Em produção, devem ser alteradas e gerenciadas de forma segura.
+
+### MinIO (Armazenamento de Imagens)
+
+| Campo | Valor |
+|-------|-------|
+| Access Key | minioadmin |
+| Secret Key | minioadmin |
+| Console | http://localhost:9001 |
+| Bucket | album-capas |
+
+### PostgreSQL (Banco de Dados)
+
+| Campo | Valor |
+|-------|-------|
+| Database | artists_db |
+| Username | artists |
+| Password | artists |
+| Port | 5432 |
+
+---
+
+## Execução Individual (Desenvolvimento)
+
+Caso prefira executar os serviços separadamente para desenvolvimento:
+
+### Backend
 ```bash
 cd artists-api
 ./gradlew bootRun
 ```
 
-#### Frontend
+### Frontend
 ```bash
 cd artists-web
 npm install
 npm run dev
 ```
 
-### Credenciais Padrão
-
-**Usuários da aplicação:**
-- Username: `admin` | Senha: `admin123`
-- Username: `user` | Senha: `admin123`
-
-**MinIO:**
-- Access Key: `minioadmin`
-- Secret Key: `minioadmin`
-
-**PostgreSQL:**
-- Database: `artists_db`
-- Username: `artists`
-- Password: `artists`
+> **Nota:** Certifique-se de que o PostgreSQL e MinIO estejam rodando (via Docker ou instalação local) antes de executar os serviços individualmente.
 
 ---
 
 ## Desenvolvimento com IDEs (VS Code, IntelliJ, etc.)
 
-Para obter **autocompletar**, **verificação de tipos** e **IntelliSense** no frontend:
+As dependências do frontend **já são instaladas automaticamente** pelos scripts `start.ps1` (Windows) ou `start.sh` (Linux/Mac).
+
+Se você executou manualmente com `docker-compose up` e está vendo erros no VS Code:
 
 ```bash
 cd artists-web
 npm install
 ```
 
-**Por quê?**
+**Por quê isso é necessário?**
 - O container Docker tem seu próprio `node_modules` (isolado)
-- A IDE precisa das dependências **localmente** para analisar o código TypeScript
-- O `start.sh` já faz isso automaticamente
+- O VS Code/TypeScript precisa das dependências **localmente** para:
+  - ✅ IntelliSense e autocompletar
+  - ✅ Verificação de tipos TypeScript
+  - ✅ Detecção de erros em tempo real
+  - ✅ Navegação de código (Go to Definition)
 
-**Importante:** As dependências locais são **apenas para a IDE**. A aplicação roda dentro do container usando suas próprias dependências.
+**Importante:** As dependências locais são **apenas para a IDE**. A aplicação roda no container usando suas próprias dependências.
 
 ---
 

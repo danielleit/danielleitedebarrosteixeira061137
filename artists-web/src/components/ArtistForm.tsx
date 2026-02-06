@@ -11,15 +11,44 @@ interface ArtistFormProps {
   isEdit?: boolean;
 }
 
+const MIN_NAME_LENGTH = 2;
+const MAX_NAME_LENGTH = 100;
+
 export function ArtistForm({ initialData, isEdit = false }: ArtistFormProps) {
   const router = useRouter();
   const [nome, setNome] = useState(initialData?.nome || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  function validateNome(value: string): string | null {
+    const trimmed = value.trim();
+    
+    if (!trimmed) {
+      return "Nome do artista é obrigatório";
+    }
+    
+    if (trimmed.length < MIN_NAME_LENGTH) {
+      return `Nome deve ter pelo menos ${MIN_NAME_LENGTH} caracteres`;
+    }
+    
+    if (trimmed.length > MAX_NAME_LENGTH) {
+      return `Nome deve ter no máximo ${MAX_NAME_LENGTH} caracteres`;
+    }
+    
+    return null;
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // Validar antes de enviar
+    const validationError = validateNome(nome);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -28,7 +57,7 @@ export function ArtistForm({ initialData, isEdit = false }: ArtistFormProps) {
         alert("Funcionalidade de edição em desenvolvimento");
         router.back();
       } else {
-        const result = await artistFacade.createArtist({ nome });
+        const result = await artistFacade.createArtist({ nome: nome.trim() });
         if (result) {
           router.push("/artists");
         } else {
@@ -42,6 +71,10 @@ export function ArtistForm({ initialData, isEdit = false }: ArtistFormProps) {
     }
   }
 
+  const isValid = nome.trim().length >= MIN_NAME_LENGTH && nome.trim().length <= MAX_NAME_LENGTH;
+  const charCount = nome.length;
+  const isNearLimit = charCount > MAX_NAME_LENGTH * 0.8;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
       {/* Campo Nome */}
@@ -54,13 +87,19 @@ export function ArtistForm({ initialData, isEdit = false }: ArtistFormProps) {
           id="nome"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
+          maxLength={MAX_NAME_LENGTH}
           required
           className="block w-full px-5 py-4 border-2 border-gray-200 rounded-lg focus:border-[#FFBB38] focus:ring-0 transition-all outline-none text-[#1D1D1D] text-lg"
           placeholder="Ex: The Beatles, Pink Floyd, etc."
         />
-        <p className="mt-3 text-sm text-gray-500">
-          Digite o nome completo do artista ou banda
-        </p>
+        <div className="mt-2 flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            Digite o nome completo do artista ou banda (mín. {MIN_NAME_LENGTH} caracteres)
+          </p>
+          <p className={`text-sm font-mono ${isNearLimit ? 'text-orange-600 font-bold' : 'text-gray-500'}`}>
+            {charCount}/{MAX_NAME_LENGTH}
+          </p>
+        </div>
       </div>
 
       {/* Mensagem de Erro */}
@@ -77,7 +116,7 @@ export function ArtistForm({ initialData, isEdit = false }: ArtistFormProps) {
       <div className="flex gap-4 pt-6 border-t-2 border-gray-200">
         <button
           type="submit"
-          disabled={loading || !nome.trim()}
+          disabled={loading || !isValid}
           className="flex-1 inline-flex items-center justify-center gap-3 px-8 py-4 bg-[#FFBB38] text-[#1D1D1D] rounded-lg hover:bg-[#E5A832] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl font-bold text-lg"
         >
           {loading ? (
