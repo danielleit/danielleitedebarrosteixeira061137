@@ -15,4 +15,8 @@ public interface ArtistMapper
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "excluido", ignore = true)
     Artist toEntity(ArtistRequest request);
+
+    @Override
+    @Mapping(target = "albumCount", ignore = true)
+    ArtistResponse toResponse(Artist entity);
 }

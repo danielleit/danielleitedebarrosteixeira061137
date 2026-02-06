@@ -11,4 +11,6 @@ public interface AlbumRepository extends BaseRepository<Album> {
     Page<Album> findByArtistIdAndExcluidoFalse(Long artistId, Pageable pageable);
 
     Page<Album> findByExcluidoFalse(Pageable pageable);
+
+    long countByArtistIdAndExcluidoFalse(Long artistId);
 }

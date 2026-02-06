@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import br.gov.seplag.artists_api.album.domain.Album;
@@ -13,6 +14,7 @@ import br.gov.seplag.artists_api.album.mapper.AlbumMapper;
 import br.gov.seplag.artists_api.album.repository.AlbumRepository;
 import br.gov.seplag.artists_api.artist.domain.Artist;
 import br.gov.seplag.artists_api.artist.repository.ArtistRepository;
+import br.gov.seplag.artists_api.common.dto.AlbumNotification;
 import br.gov.seplag.artists_api.common.storage.MinioService;
 import br.gov.seplag.artists_api.common.service.GenericCrudService;
 import jakarta.persistence.EntityNotFoundException;
@@ -23,16 +25,20 @@ public class AlbumService extends GenericCrudService<Album> {
     private final AlbumMapper mapper;
     private final ArtistRepository artistRepository;
     private final AlbumRepository albumRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public AlbumService(
             AlbumRepository albumRepository,
             ArtistRepository artistRepository,
-            AlbumMapper mapper, MinioService minioService) {
+            AlbumMapper mapper, 
+            MinioService minioService,
+            SimpMessagingTemplate messagingTemplate) {
 
         super(albumRepository);
         this.albumRepository = albumRepository;
         this.artistRepository = artistRepository;
         this.mapper = mapper;
+        this.messagingTemplate = messagingTemplate;
     }
 
     public AlbumResponse create(AlbumRequest request) {
@@ -41,8 +47,18 @@ public class AlbumService extends GenericCrudService<Album> {
 
         Album album = mapper.toEntity(request);
         album.setArtist(artist);
+        Album savedAlbum = save(album);
 
-        return mapper.toResponse(save(album));
+        // Enviar notificação WebSocket
+        AlbumNotification notification = AlbumNotification.newAlbum(
+                savedAlbum.getId(),
+                savedAlbum.getNome(),
+                artist.getId(),
+                artist.getNome()
+        );
+        messagingTemplate.convertAndSend("/topic/albums", notification);
+
+        return mapper.toResponse(savedAlbum);
     }
 
     public AlbumResponse update(Long id, AlbumRequest request) {
