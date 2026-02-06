@@ -37,9 +37,9 @@ services:
     image: quay.io/fedora/postgresql-16:latest
     container_name: artists-postgres
     environment:
-      POSTGRES_DB: artists_db
-      POSTGRES_USER: artists
-      POSTGRES_PASSWORD: artists
+      POSTGRESQL_DATABASE: artists_db
+      POSTGRESQL_USER: artists
+      POSTGRESQL_PASSWORD: artists
     ports:
       - "5432:5432"
     volumes:
